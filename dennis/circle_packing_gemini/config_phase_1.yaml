@@ -1,5 +1,5 @@
 # Configuration for circle packing constructor evolution (n=26)
-max_iterations: 10  # Increased iterations
+max_iterations: 10  
 checkpoint_interval: 5
 log_level: "INFO"
 
