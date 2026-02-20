@@ -1,6 +1,6 @@
 # Configuration for breaking through the circle packing plateau
-max_iterations: 100
-checkpoint_interval: 10
+max_iterations: 10
+checkpoint_interval: 5
 log_level: "INFO"
 
 # LLM configuration
