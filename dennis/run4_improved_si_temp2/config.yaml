@@ -13,7 +13,7 @@ llm:
   api_key: ${GEMINI_API_KEY}
   temperature: 2.0
   top_p: 0.95
-  max_tokens: 20000
+  max_tokens: 30000
   timeout: 600
 
 # Prompt configuration
@@ -56,3 +56,4 @@ evaluator:
 # Evolution settings
 diff_based_evolution: false  # Use full rewrites instead of diffs
 allow_full_rewrites: true    # Allow full rewrites for constructor functions
+max_code_length: 30000       # Maximum allowed code length in characters
