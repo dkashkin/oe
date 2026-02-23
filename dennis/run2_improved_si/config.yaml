@@ -32,7 +32,8 @@ prompt:
     * Completeness: You MUST provide a fully runnable script. Do not use ellipses (`...`), comments-as-placeholders, or unclosed structures.
     * Style: Ensure the code is syntactically perfect and strictly adheres to PEP 8 formatting.
     * Code review: doublecheck your code to make sure it will not bump into any runtime exceptions.
-
+    * Response Format: response in plain text, without wrapping the code into a Markdown codeblock.
+    
   num_top_programs: 3
   use_template_stochasticity: false
 
