@@ -1,0 +1,18 @@
+{
+  "id": "f778157f-c4cd-4693-b3d6-2d539d46ab74",
+  "generation": 4,
+  "iteration": 96,
+  "timestamp": 1771625013.1116762,
+  "parent_id": "9c865771-a79c-4c38-87ad-0baa35a169ec",
+  "metrics": {
+    "validity": 1.0,
+    "sum_radii": 2.631093586498165,
+    "target_ratio": 0.998517490132131,
+    "combined_score": 0.998517490132131,
+    "radius_variance": 0.005551894047569541,
+    "spatial_spread": 0.19740718412430547,
+    "eval_time": 1.165604829788208
+  },
+  "language": "python",
+  "saved_at": 1771625126.5186574
+}
