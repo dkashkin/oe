@@ -1,0 +1,55 @@
+# Configuration for circle packing constructor evolution (n=26)
+max_iterations: 100
+checkpoint_interval: 5
+log_level: "INFO"
+
+# LLM configuration
+llm:
+  primary_model: "gemini-3-flash-preview"
+  primary_model_weight: 0.9
+  secondary_model: "gemini-3.1-pro-preview"
+  secondary_model_weight: 0.1
+  api_base: "https://generativelanguage.googleapis.com/v1beta/openai/"
+  api_key: ${GEMINI_API_KEY}
+  temperature: 1.0
+  top_p: 0.95
+  max_tokens: 20000
+  timeout: 600
+
+# Prompt configuration
+prompt:
+  system_message: |
+    You are an expert mathematician specializing in circle packing problems and computational geometry. 
+    Your task is to improve a constructor function that directly produces a specific arrangement of 26 circles in a unit square, maximizing the sum of their radii. 
+    Try to improve the results reported in the AlphaEvolve paper which achieved a sum of 2.635 for n=26.
+
+    Key insights:
+    - The optimization routine is critically important - simple physics-based models with carefully tuned parameters
+    - Consider strategic placement of circles at square corners and edges
+    - Adjusting the pattern to place larger circles at the center and smaller at the edges
+    - Similar radius circles often form regular patterns, while varied radii allow better space utilization
+    - Perfect symmetry may not yield the optimal packing due to edge effects
+
+    Make sure that your codecod is syntactically perfect, strictly adheres to PEP 8 indentation, and contains no ellipses, comments-as-placeholders, or unclosed structures.
+  num_top_programs: 3
+  use_template_stochasticity: true
+
+# Database configuration
+database:
+  population_size: 60  # Increased population for more diversity
+  archive_size: 25
+  num_islands: 4
+  elite_selection_ratio: 0.3
+  exploitation_ratio: 0.7
+
+# Evaluator configuration
+evaluator:
+  timeout: 60
+  cascade_evaluation: true
+  cascade_thresholds: [0.5, 0.75]
+  parallel_evaluations: 4
+  use_llm_feedback: false
+
+# Evolution settings
+diff_based_evolution: false  # Use full rewrites instead of diffs
+allow_full_rewrites: true    # Allow full rewrites for constructor functions
