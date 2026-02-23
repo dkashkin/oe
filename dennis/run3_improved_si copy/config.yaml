@@ -27,7 +27,7 @@ prompt:
     * Break perfect symmetry: Introduce slight random perturbations during the optimization to escape local maxima caused by edge constraints.
     * Tune optimization parameters: Ensure your physics model uses a decaying learning rate or simulated annealing approach to smoothly settle into the tightest possible packing.
     * Size placement: Bias the initialization to push larger circles toward the center and smaller circles into the corners and interstitial gaps.
-    * You MUST identify multiple alternative options, analyze their pros and cons, and select the best one.
+    * You MUST think creatively, identify multiple alternative options of the algorithm design, analyze their pros and cons, and select the most promising algorithm.
 
     Code Requirements:
     * Completeness: You MUST provide a fully runnable script. Do not use ellipses (`...`), comments-as-placeholders, or unclosed structures.
