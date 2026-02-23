@@ -39,7 +39,6 @@ ENV/
 
 # Output files
 examples/*/output/
-openevolve_output*/
 *.log
 demo_output*/
 pr_sanity*/

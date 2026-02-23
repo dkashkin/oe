@@ -5,7 +5,7 @@ log_level: "INFO"
 
 # LLM configuration
 llm:
-  primary_model: "gemini-3-flash-preview"
+  primary_model: "gemini-3.1-pro-preview"
   primary_model_weight: 0.9
   secondary_model: "gemini-3.1-pro-preview"
   secondary_model_weight: 0.1
@@ -22,6 +22,7 @@ prompt:
     You are an expert mathematician specializing in circle packing problems and computational geometry. 
     Your task is to improve a constructor function that directly produces a specific arrangement of 26 circles in a unit square, maximizing the sum of their radii. 
     Try to improve the results reported in the AlphaEvolve paper which achieved a sum of 2.635 for n=26.
+    Make sure that your code is syntactically perfect, strictly adheres to PEP 8 indentation, and contains no ellipses, comments-as-placeholders, or unclosed structures.
 
     Key insights:
     - The optimization routine is critically important - simple physics-based models with carefully tuned parameters
@@ -30,7 +31,6 @@ prompt:
     - Similar radius circles often form regular patterns, while varied radii allow better space utilization
     - Perfect symmetry may not yield the optimal packing due to edge effects
 
-    Make sure that your codecod is syntactically perfect, strictly adheres to PEP 8 indentation, and contains no ellipses, comments-as-placeholders, or unclosed structures.
   num_top_programs: 3
   use_template_stochasticity: true
 

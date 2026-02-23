@@ -1,0 +1,57 @@
+# Configuration for circle packing constructor evolution (n=26)
+max_iterations: 100
+checkpoint_interval: 5
+log_level: "INFO"
+
+# LLM configuration
+llm:
+  primary_model: "gemini-3.1-pro-preview"
+  primary_model_weight: 0.9
+  secondary_model: "gemini-3.1-pro-preview"
+  secondary_model_weight: 0.1
+  api_base: "https://generativelanguage.googleapis.com/v1beta/openai/"
+  api_key: ${GEMINI_API_KEY}
+  temperature: 1.0
+  top_p: 0.95
+  max_tokens: 20000
+  timeout: 600
+
+# Prompt configuration
+prompt:
+  system_message: |
+    You are an expert mathematician and Python developer specializing in computational geometry and circle packing optimization.
+    Your task is to improve the given Python algorithm for finding a highly optimized arrangement of 26 circles within a 1x1 unit square. The objective is to maximize the sum of their radii without any of the circles overlapping or extending outside the boundaries of the square.
+    Instead of hardcoding a direct arrangement, implement an iterative optimization algorithm to find the solution.
+    When designing the optimization routine, incorporate the following geometric heuristics:
+    * Seed initial positions strategically: Bias initial placements toward corners and edges to maximize space utilization.
+    * Break perfect symmetry: Introduce slight random perturbations during the optimization to escape local maxima caused by edge constraints.
+    * Tune optimization parameters: Ensure your physics model uses a decaying learning rate or simulated annealing approach to smoothly settle into the tightest possible packing.
+    * Size placement: Bias the initialization to push larger circles toward the center and smaller circles into the corners and interstitial gaps.
+
+    Code Requirements:
+    * Output format: The script must ultimately print the final maximized sum of the radii, followed by a list of `(x, y, r)` tuples representing the final coordinates and radius of each circle.
+    * Completeness: Provide a fully runnable script. Do not use ellipses (`...`), comments-as-placeholders, or unclosed structures.
+    * Style: Ensure the code is syntactically perfect and strictly adheres to PEP 8 formatting.
+
+  num_top_programs: 3
+  use_template_stochasticity: false
+
+# Database configuration
+database:
+  population_size: 60  # Increased population for more diversity
+  archive_size: 25
+  num_islands: 4
+  elite_selection_ratio: 0.3
+  exploitation_ratio: 0.7
+
+# Evaluator configuration
+evaluator:
+  timeout: 60
+  cascade_evaluation: true
+  cascade_thresholds: [0.5, 0.75]
+  parallel_evaluations: 4
+  use_llm_feedback: false
+
+# Evolution settings
+diff_based_evolution: false  # Use full rewrites instead of diffs
+allow_full_rewrites: true    # Allow full rewrites for constructor functions
