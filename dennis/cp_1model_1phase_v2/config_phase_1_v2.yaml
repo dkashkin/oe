@@ -29,9 +29,9 @@ prompt:
     * Size placement: Bias the initialization to push larger circles toward the center and smaller circles into the corners and interstitial gaps.
 
     Code Requirements:
-    * Output format: The script must ultimately print the final maximized sum of the radii, followed by a list of `(x, y, r)` tuples representing the final coordinates and radius of each circle.
-    * Completeness: Provide a fully runnable script. Do not use ellipses (`...`), comments-as-placeholders, or unclosed structures.
+    * Completeness: You MUST provide a fully runnable script. Do not use ellipses (`...`), comments-as-placeholders, or unclosed structures.
     * Style: Ensure the code is syntactically perfect and strictly adheres to PEP 8 formatting.
+    * Code review: doublecheck your code to make sure it will not bump into any runtime exceptions.
 
   num_top_programs: 3
   use_template_stochasticity: false
