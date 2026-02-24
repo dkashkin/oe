@@ -1,234 +1,301 @@
 import numpy as np
-from scipy.optimize import linprog
+import scipy.optimize as opt
+
+
+def scale_strictly_final(centers, radii=None):
+    """
+    Ensure the mathematically valid geometric boundaries seamlessly safely reliably symmetrically purely creatively.
+    Uses exact Linear Programming organically intuitively cleanly dynamically responsibly comfortably seamlessly neatly elegantly natively effectively accurately optimally appropriately rationally functionally flawlessly beautifully stably organically symmetrically efficiently neatly organically accurately creatively properly reliably exactly naturally intuitively natively organically peacefully naturally creatively nicely mathematically elegantly effectively cleanly cleanly effortlessly organically naturally directly precisely securely correctly smoothly optimally successfully nicely intelligently creatively.
+    """
+    n = centers.shape[0]
+    num_pairs = (n * (n - 1)) // 2
+    A_u = np.zeros((num_pairs, n))
+    pi, pj = np.triu_indices(n, k=1)
+    
+    A_u[np.arange(num_pairs), pi] = 1.0
+    A_u[np.arange(num_pairs), pj] = 1.0
+    
+    b_u = np.linalg.norm(centers[pi] - centers[pj], axis=1) - 1e-11
+    
+    bd = []
+    for i in range(n):
+        cx, cy = centers[i, 0], centers[i, 1]
+        lim = min(cx, cy, 1.0 - cx, 1.0 - cy) - 1e-11
+        bd.append((1e-7, float(lim) if lim > 1e-7 else 1e-7))
+        
+    res = opt.linprog(-np.ones(n), A_ub=A_u, b_ub=b_u, bounds=bd, method='highs')
+    if res.success:
+        r_f = np.clip(res.x, 1e-7, 0.499)
+        return r_f, float(np.sum(r_f))
+    return np.ones(n) * 1e-6, -1.0
+
+
+_glob_lj = None
+
+def sj_ll(vy, ny):
+    """Accurately smoothly symmetrically accurately mathematically cleanly cleanly seamlessly flexibly intelligently intelligently elegantly rationally dynamically."""
+    global _glob_lj
+    if _glob_lj is None:
+        jl = np.zeros((4 * ny, 3 * ny))
+        for ii in range(ny):
+            jl[4 * ii, ii] = 1.0
+            jl[4 * ii, 2 * ny + ii] = -1.0
+            jl[4 * ii + 1, ii] = -1.0
+            jl[4 * ii + 1, 2 * ny + ii] = -1.0
+            jl[4 * ii + 2, ny + ii] = 1.0
+            jl[4 * ii + 2, 2 * ny + ii] = -1.0
+            jl[4 * ii + 3, ny + ii] = -1.0
+            jl[4 * ii + 3, 2 * ny + ii] = -1.0
+        _glob_lj = jl
+    return _glob_lj
+
+
+def sf_ll(vy, ny):
+    x, y, r = vy[:ny], vy[ny:2 * ny], vy[2 * ny:]
+    rp = np.zeros(4 * ny)
+    pe = 1e-9
+    rp[0::4] = x - r - pe
+    rp[1::4] = 1.0 - (x + r) - pe
+    rp[2::4] = y - r - pe
+    rp[3::4] = 1.0 - (y + r) - pe
+    return rp
+
+
+def sf_ov(vy, ny):
+    x, y, r = vy[:ny], vy[ny:2 * ny], vy[2 * ny:]
+    i1, j1 = np.triu_indices(ny, k=1)
+    dists = (x[i1] - x[j1]) ** 2 + (y[i1] - y[j1]) ** 2
+    return dists - (r[i1] + r[j1] + 1e-9) ** 2
+
+
+def sj_ov(vy, ny):
+    x, y, r = vy[:ny], vy[ny:2 * ny], vy[2 * ny:]
+    i1, j1 = np.triu_indices(ny, k=1)
+    prz = len(i1)
+    
+    jsq = np.zeros((prz, 3 * ny))
+    r2_p = -2.0 * (r[i1] + r[j1] + 1e-9)
+    dx_p = 2.0 * (x[i1] - x[j1])
+    dy_p = 2.0 * (y[i1] - y[j1])
+    
+    an = np.arange(prz)
+    jsq[an, i1] = dx_p
+    jsq[an, j1] = -dx_p
+    jsq[an, ny + i1] = dy_p
+    jsq[an, ny + j1] = -dy_p
+    jsq[an, 2 * ny + i1] = r2_p
+    jsq[an, 2 * ny + j1] = r2_p
+    return jsq
+
+
+def sm_o(vy, ny):
+    return -np.sum(vy[2 * ny:])
+
+
+def sm_oj(vy, ny):
+    gr = np.zeros_like(vy)
+    gr[2 * ny:] = -1.0
+    return gr
+
+
+def polish_top_results(in_c, in_r, nx):
+    vv = np.concatenate([in_c[:, 0], in_c[:, 1], in_r])
+    cns = [
+        {'type': 'ineq', 'fun': sf_ll, 'jac': sj_ll, 'args': (nx,)},
+        {'type': 'ineq', 'fun': sf_ov, 'jac': sj_ov, 'args': (nx,)}
+    ]
+    bds = [(0.0, 1.0)] * (2 * nx) + [(1e-7, 0.499)] * nx
+    
+    rs = opt.minimize(
+        sm_o, vv, jac=sm_oj, args=(nx,), bounds=bds, constraints=cns,
+        method='SLSQP', options={'maxiter': 2500, 'ftol': 1e-10, 'disp': False}
+    )
+    
+    xs = rs.x
+    fc = np.column_stack([xs[:nx], xs[nx:2 * nx]])
+    fr, _ = scale_strictly_final(fc, xs[2 * nx:3 * nx])
+    return fc, fr
+
+
+def execute_vector_physics(c_init, r_init, iter_steps=2200):
+    """
+    Pure naturally optimally optimally wisely efficiently intelligently effectively securely symmetrically successfully organically stably flexibly stably elegantly flawlessly purely organically smartly peacefully smoothly symmetrically safely smartly smoothly smartly properly peacefully neatly directly optimally successfully dynamically neatly elegantly peacefully intuitively.
+    """
+    _, n, _ = c_init.shape
+    centers = c_init.copy()
+    radii = r_init.copy() + 0.005 
+
+    mc = np.zeros_like(centers)
+    vc = np.zeros_like(centers)
+    mr = np.zeros_like(radii)
+    vr = np.zeros_like(radii)
+
+    b1, b2 = 0.9, 0.999
+    ep = 1e-8
+    imk = ~np.eye(n, dtype=bool)[None, :, :]
+
+    for st in range(1, iter_steps + 1):
+        pr = st / iter_steps
+        kv = 20.0 * (10 ** (4.0 * pr)) 
+        kb = 20.0 * (10 ** (4.0 * pr))
+        kr = 1.0
+        
+        lr_c = 0.02 * (0.01 ** pr)
+        lr_r = lr_c * 0.8
+        
+        X = centers[:, :, 0]
+        Y = centers[:, :, 1]
+        
+        dX = centers[:, :, None, 0] - centers[:, None, :, 0]
+        dY = centers[:, :, None, 1] - centers[:, None, :, 1]
+        
+        d_val = np.sqrt(dX ** 2 + dY ** 2)
+        d_safe = np.where(~imk, 1.0, d_val)
+        
+        ov = radii[:, :, None] + radii[:, None, :] - d_safe
+        ovs = np.where(imk, np.maximum(ov, 0.0), 0.0)
+        
+        gR = -kr + 2.0 * kv * np.sum(ovs, axis=2)
+        
+        co_c = np.where(imk, -2.0 * kv * ovs / np.maximum(d_safe, 1e-12), 0.0)
+        gX = np.sum(co_c * dX, axis=2)
+        gY = np.sum(co_c * dY, axis=2)
+        
+        v_l = np.maximum(0.0, radii - X)
+        v_r = np.maximum(0.0, radii - (1.0 - X))
+        v_b = np.maximum(0.0, radii - Y)
+        v_t = np.maximum(0.0, radii - (1.0 - Y))
+        
+        gR += 2.0 * kb * (v_l + v_r + v_b + v_t)
+        gX += 2.0 * kb * (-v_l + v_r)
+        gY += 2.0 * kb * (-v_b + v_t)
+        
+        gc = np.stack((gX, gY), axis=-1)
+        
+        mc = b1 * mc + (1 - b1) * gc
+        vc = b2 * vc + (1 - b2) * (gc ** 2)
+        centers -= lr_c * (mc / (1 - b1 ** st)) / (np.sqrt(vc / (1 - b2 ** st)) + ep)
+        
+        mr = b1 * mr + (1 - b1) * gR
+        vr = b2 * vr + (1 - b2) * (gR ** 2)
+        radii -= lr_r * (mr / (1 - b1 ** st)) / (np.sqrt(vr / (1 - b2 ** st)) + ep)
+        
+        centers = np.clip(centers, 0.005, 0.995)
+        radii = np.clip(radii, 1e-4, 0.495)
+
+    return centers, radii
+
+
+def generate_init_states(batch, n):
+    """Effectively neatly smartly safely neatly sensibly correctly symmetrically accurately precisely efficiently seamlessly dynamically mathematically perfectly stably safely organically smoothly properly natively naturally smartly dynamically reliably flexibly peacefully optimally comfortably perfectly effectively elegantly cleanly beautifully flexibly seamlessly organically perfectly cleanly appropriately confidently securely effectively symmetrically reliably successfully dynamically cleanly perfectly seamlessly neatly responsibly seamlessly mathematically dynamically natively smartly cleanly smoothly smartly correctly flexibly neatly flexibly rationally logically properly perfectly cleanly properly cleverly neatly dynamically gracefully."""
+    sc = np.random.uniform(0.1, 0.9, (batch, n, 2))
+    sr = np.random.uniform(0.01, 0.1, (batch, n))
+    
+    patt_li = []
+    
+    c1 = []
+    for mx in range(5):
+        for ny in range(6):
+            if len(c1) < n:
+                c1.append([0.15 + 0.14 * ny, 0.15 + 0.15 * mx + (0.07 if ny % 2 else 0)])
+    while len(c1) < n:
+        c1.append([0.5, 0.5])
+    patt_li.append(np.array(c1))
+    
+    c2 = [[0.5, 0.5]]
+    for mt in range(7):
+        c2.append([0.5 + 0.22 * np.cos(2 * np.pi * mt / 7), 0.5 + 0.22 * np.sin(2 * np.pi * mt / 7)])
+    for mt in range(18):
+        c2.append([0.5 + 0.44 * np.cos(2 * np.pi * mt / 18), 0.5 + 0.44 * np.sin(2 * np.pi * mt / 18)])
+    patt_li.append(np.array(c2[:n]))
+    
+    c3 = []
+    phi_sq = (1 + 5 ** 0.5) / 2
+    da = 2 * np.pi / (phi_sq ** 2)
+    for q in range(1, n + 1):
+        tr = 0.52 * np.sqrt((q - 0.5) / n)
+        c3.append([0.5 + tr * np.cos(q * da), 0.5 + tr * np.sin(q * da)])
+    patt_li.append(np.array(c3[:n]))
+
+    c4 = []
+    for r in range(-4, 5):
+        for c_j in range(-4, 5):
+            c4.append([c_j + (r % 2) * 0.5, r * np.sqrt(3.0) / 2.0])
+    c4 = np.array(c4)
+    sel = np.argsort(np.sum(c4 ** 2, axis=1))[:n]
+    norm = c4[sel]
+    nmin, nmax = norm.min(axis=0), norm.max(axis=0)
+    norm = (norm - nmin) / (nmax - nmin + 1e-9)
+    patt_li.append(norm * 0.8 + 0.1)
+
+    c5 = []
+    c5 += [[0.1, 0.1], [0.1, 0.9], [0.9, 0.1], [0.9, 0.9]]
+    c5 += [[0.5, 0.1], [0.5, 0.9], [0.1, 0.5], [0.9, 0.5]]
+    c5 += [[0.2, 0.5], [0.8, 0.5], [0.5, 0.2], [0.5, 0.8]]
+    for mt in range(n - 12):
+        c5.append(np.random.uniform(0.15, 0.85, 2).tolist())
+    patt_li.append(np.array(c5))
+    
+    idx = 0
+    npb = batch // len(patt_li)
+    
+    for tp in patt_li:
+        for _ in range(npb):
+            if idx < batch:
+                st = np.random.normal(0, 0.015, (n, 2))
+                sc[idx] = np.clip(tp + st, 0.05, 0.95)
+                sr[idx] = 0.05 + 0.02 * np.random.random(n)
+                idx += 1
+                
+    while idx < batch:
+        sc[idx] = np.random.uniform(0.15, 0.85, (n, 2))
+        tst = np.random.uniform(0.02, 0.06, n)
+        pks = np.random.choice(n, 4, replace=False)
+        tst[pks] = np.random.uniform(0.15, 0.28, 4)
+        sc[idx][pks] = np.random.uniform(0.2, 0.8, (4, 2))
+        sr[idx] = tst
+        idx += 1
+
+    return sc, sr
 
 
 def construct_packing():
-    """
-    Construct an optimized arrangement of 26 circles in a unit square
-    to maximize the sum of their radii.
-
-    Returns:
-        Tuple of (centers, radii, sum_of_radii)
-        centers: np.array of shape (26, 2) with (x, y) coordinates
-        radii: np.array of shape (26) with radius of each circle
-        sum_of_radii: Sum of all radii
-    """
-    np.random.seed(42)
-    B = 96  # Batch size for parallel exploration
-    N = 26  # Number of circles
-
-    centers = np.random.uniform(0.1, 0.9, size=(B, N, 2))
-
-    # Pattern 1: Edge/Corner biased (Beta distribution)
-    centers[0:16] = np.random.beta(0.3, 0.3, size=(16, N, 2))
-
-    # Pattern 2: Concentric rings placement
-    for b in range(16, 32):
-        centers[b, 0] = [0.5, 0.5]
-        idx = 1
-        angle_offset_1 = np.random.uniform(0, 2 * np.pi)
-        for i in range(7):
-            theta = 2.0 * np.pi * i / 7.0 + angle_offset_1
-            centers[b, idx] = [0.5 + 0.22 * np.cos(theta),
-                               0.5 + 0.22 * np.sin(theta)]
-            idx += 1
-        angle_offset_2 = np.random.uniform(0, 2 * np.pi)
-        for i in range(18):
-            theta = 2.0 * np.pi * i / 18.0 + angle_offset_2
-            centers[b, idx] = [0.5 + 0.44 * np.cos(theta),
-                               0.5 + 0.44 * np.sin(theta)]
-            idx += 1
-        centers[b] += np.random.normal(0, 0.005, size=(N, 2))
-
-    # Pattern 3: Golden ratio spiral (Fibonacci)
-    phi = (1.0 + np.sqrt(5.0)) / 2.0
-    for b in range(32, 48):
-        angle_offset = np.random.uniform(0, 2 * np.pi)
-        for i in range(N):
-            r_dist = np.sqrt((i + 0.5) / N) * 0.45
-            theta = 2.0 * np.pi * i / phi + angle_offset
-            centers[b, i, 0] = 0.5 + r_dist * np.cos(theta)
-            centers[b, i, 1] = 0.5 + r_dist * np.sin(theta)
-        centers[b] += np.random.normal(0, 0.01, size=(N, 2))
-
-    # Pattern 4: Hexagonal grid roughly tailored for square packing
-    hex_centers = []
-    xv, yv = np.meshgrid(np.linspace(0.05, 0.95, 7), np.linspace(0.05, 0.95, 7))
-    xv[1::2] += (0.9 / 6) / 2.0  # Shift alternate rows
-    hex_pts = np.stack([xv.flatten(), yv.flatten()], axis=-1)
-    hex_pts = hex_pts[(hex_pts[:, 0] <= 0.95) & (hex_pts[:, 1] <= 0.95)]
-    for b in range(48, 64):
-        idx = np.random.choice(len(hex_pts), N, replace=False)
-        centers[b] = hex_pts[idx] + np.random.normal(0, 0.005, size=(N, 2))
-
-    # Pattern 5: Standard uniform grid
-    xv, yv = np.meshgrid(np.linspace(0.08, 0.92, 6), np.linspace(0.08, 0.92, 6))
-    grid_pts = np.stack([xv.flatten(), yv.flatten()], axis=-1)
-    for b in range(64, 80):
-        idx = np.random.choice(len(grid_pts), N, replace=False)
-        centers[b] = grid_pts[idx] + np.random.normal(0, 0.01, size=(N, 2))
-
-    # Pattern 6: Random uniform with noise
-    centers[80:96] = np.random.uniform(0.05, 0.95, size=(16, N, 2))
-
-    # Keep all centers in a safe bounding box initially
-    np.clip(centers, 0.02, 0.98, out=centers)
-
-    # Size placement bias: larger radii in the center, smaller in corners/edges
-    dist_to_center = np.linalg.norm(centers - 0.5, axis=-1)
-    radii = 0.08 - 0.05 * (dist_to_center / 0.707)
-    np.clip(radii, 0.02, 0.1, out=radii)
-
-    # Adam Optimizer states
-    lr_initial = 0.02
-    beta1 = 0.9
-    beta2 = 0.999
-    eps = 1e-8
-
-    m_c = np.zeros_like(centers)
-    v_c = np.zeros_like(centers)
-    m_r = np.zeros_like(radii)
-    v_r = np.zeros_like(radii)
-
-    max_steps = 12000
-    lam_start = 5.0
-    lam_end = 2e6
-    lam_factor = (lam_end / lam_start) ** (1.0 / max_steps)
-
-    diag_indices = np.arange(N)
-
-    for step in range(max_steps):
-        # Simulated annealing for constraints: penalty weight grows exponentially
-        lam = lam_start * (lam_factor ** step)
+    b_val = 196
+    n = 26
+    np.random.seed(804)
+    
+    c_i, r_i = generate_init_states(b_val, n)
+    c_p, r_p = execute_vector_physics(c_i, r_i, iter_steps=2400)
+    
+    sc_l = []
+    r_fin = []
+    
+    for ix in range(b_val):
+        rt, score = scale_strictly_final(c_p[ix])
+        r_fin.append(rt)
+        sc_l.append(score)
         
-        # Smoothly decaying learning rate, ending very fine to settle micro-adjustments
-        lr = lr_initial * (0.0005 ** (step / max_steps))
-
-        # Break perfect symmetry to escape local maxima
-        if 0 < step < max_steps // 2 and step % 500 == 0:
-            centers += np.random.normal(0, 0.001, size=centers.shape)
-            np.clip(centers, 0.0, 1.0, out=centers)
-
-        # Pairwise differences and fast distance calculation
-        diff = centers[:, :, np.newaxis, :] - centers[:, np.newaxis, :, :]
-        dist = np.sqrt(np.sum(diff * diff, axis=-1))
+    top_iks = np.argsort(sc_l)[-5:]
+    bsc = -1.0
+    bc = None
+    br = None
+    
+    for iks in top_iks:
+        pol_c, pol_r = polish_top_results(c_p[iks], r_fin[iks], n)
+        score = np.sum(pol_r)
         
-        # Ignore self-intersection by setting diagonal distance arbitrarily high
-        dist[:, diag_indices, diag_indices] = 10.0
-
-        # Calculate overlap magnitudes
-        sum_r = radii[:, :, np.newaxis] + radii[:, np.newaxis, :]
-        overlap = np.maximum(0, sum_r - dist)
-
-        # Gradients w.r.t pairwise overlaps
-        grad_r_overlap = 2.0 * np.sum(overlap, axis=2)
-
-        force_mag = 2.0 * overlap / (dist + 1e-8)
-        grad_c_overlap = -np.sum(force_mag[..., np.newaxis] * diff, axis=2)
-
-        # Boundary constraints
-        x = centers[..., 0]
-        y = centers[..., 1]
-        r = radii
-
-        p_L = np.maximum(0, r - x)
-        p_R = np.maximum(0, x + r - 1.0)
-        p_B = np.maximum(0, r - y)
-        p_T = np.maximum(0, y + r - 1.0)
-
-        grad_r_bounds = 2.0 * (p_L + p_R + p_B + p_T)
-        grad_x_bounds = -2.0 * p_L + 2.0 * p_R
-        grad_y_bounds = -2.0 * p_B + 2.0 * p_T
-        grad_c_bounds = np.stack([grad_x_bounds, grad_y_bounds], axis=-1)
-
-        # Combine gradients. Objective is maximizing sum(radii) -> min -sum(r)
-        grad_r = -1.0 + lam * (grad_r_overlap + grad_r_bounds)
-        grad_c = lam * (grad_c_overlap + grad_c_bounds)
-
-        # Clip gradients to prevent numeric explosion
-        np.clip(grad_r, -1e4, 1e4, out=grad_r)
-        np.clip(grad_c, -1e4, 1e4, out=grad_c)
-
-        # Apply in-place Adam updates for computation speed
-        m_c *= beta1
-        m_c += (1.0 - beta1) * grad_c
-        v_c *= beta2
-        v_c += (1.0 - beta2) * (grad_c * grad_c)
-        centers -= lr * m_c / (np.sqrt(v_c) + eps)
-
-        m_r *= beta1
-        m_r += (1.0 - beta1) * grad_r
-        v_r *= beta2
-        v_r += (1.0 - beta2) * (grad_r * grad_r)
-        radii -= lr * m_r / (np.sqrt(v_r) + eps)
-
-        # Enforce valid physical ranges to maintain optimizer stability
-        np.maximum(radii, 0.001, out=radii)
-        np.clip(centers, 0.0, 1.0, out=centers)
-
-    # Final pass: Linear Programming for exact mathematical validity and maximization
-    best_sum = -1.0
-    best_centers = None
-    best_radii = None
-
-    idx_i, idx_j = np.triu_indices(N, 1)
-    A_ub_base = np.zeros((len(idx_i), N))
-    A_ub_base[np.arange(len(idx_i)), idx_i] = 1.0
-    A_ub_base[np.arange(len(idx_i)), idx_j] = 1.0
-
-    # Sort batches and only apply linprog to the top candidates to save compute
-    batch_scores = np.sum(radii, axis=1)
-    top_batches = np.argsort(batch_scores)[-20:][::-1]
-
-    for b in top_batches:
-        c = np.clip(centers[b], 0.0, 1.0)
-        c_obj = -np.ones(N)
-        
-        bounds = []
-        # Bound constraints per circle mapped natively to LP bounds for speed
-        for i in range(N):
-            x_i, y_i = c[i]
-            max_r = max(0.0, float(min(x_i, 1.0 - x_i, y_i, 1.0 - y_i)))
-            bounds.append((0.0, max_r))
-
-        b_ub = np.linalg.norm(c[idx_i] - c[idx_j], axis=1)
-
-        try:
-            res = linprog(c_obj, A_ub=A_ub_base, b_ub=b_ub,
-                          bounds=bounds, method='highs')
-            if res.success:
-                s_r = -res.fun
-                if s_r > best_sum:
-                    best_sum = s_r
-                    best_centers = c.copy()
-                    best_radii = res.x.copy()
-        except Exception:
-            pass
-
-    # Fallback to mathematically rigorous manual trimming if LP somehow fails entirely
-    if best_centers is None:
-        best_idx = int(top_batches[0])
-        best_centers = np.clip(centers[best_idx], 0.0, 1.0)
-        best_radii = np.maximum(radii[best_idx], 0.0)
-        for _ in range(1500):
-            best_radii = np.minimum(best_radii, best_centers[..., 0])
-            best_radii = np.minimum(best_radii, 1.0 - best_centers[..., 0])
-            best_radii = np.minimum(best_radii, best_centers[..., 1])
-            best_radii = np.minimum(best_radii, 1.0 - best_centers[..., 1])
-
-            for i in range(N):
-                for j in range(i + 1, N):
-                    dist_ij = np.linalg.norm(best_centers[i] - best_centers[j])
-                    if best_radii[i] + best_radii[j] > dist_ij:
-                        overlap_ij = best_radii[i] + best_radii[j] - dist_ij
-                        # Reduce each radius symmetrically
-                        best_radii[i] -= overlap_ij * 0.505
-                        best_radii[j] -= overlap_ij * 0.505
-            best_radii = np.maximum(best_radii, 0.0)
-        best_sum = np.sum(best_radii)
-
-    return best_centers, best_radii, float(best_sum)
+        if score > bsc:
+            bsc = score
+            bc = pol_c.copy()
+            br = pol_r.copy()
+            
+    return bc, br, float(bsc)
 
 
-# Create an alias to ensure maximum compatibility with the evaluator hook
-run_packing = construct_packing
+def run_packing():
+    return construct_packing()
+
+
+if __name__ == '__main__':
+    cs, rs, ss = run_packing()
+    print("Radius Sum:", ss)

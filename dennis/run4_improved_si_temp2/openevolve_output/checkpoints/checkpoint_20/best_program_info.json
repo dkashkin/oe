@@ -1,18 +1,18 @@
 {
-  "id": "393c578e-30ba-4eac-8fac-e6ec4479ca0f",
-  "generation": 3,
-  "iteration": 22,
+  "id": "ea276ae3-999c-4ae3-87e0-765c640548e7",
+  "generation": 2,
+  "iteration": 13,
   "current_iteration": 20,
   "metrics": {
     "validity": 1.0,
-    "sum_radii": 2.6204814835605243,
-    "target_ratio": 0.9944901265884344,
-    "combined_score": 0.9944901265884344,
-    "radius_variance": 0.005989852497946368,
-    "spatial_spread": 0.1898595412333681,
-    "eval_time": 3.910581111907959
+    "sum_radii": 2.6304025622164517,
+    "target_ratio": 0.9982552418278755,
+    "combined_score": 0.9982552418278755,
+    "radius_variance": 0.004865452134806958,
+    "spatial_spread": 0.18572110066036143,
+    "eval_time": 6.444270849227905
   },
   "language": "python",
-  "timestamp": 1771874009.8300226,
-  "saved_at": 1771874017.9837158
+  "timestamp": 1771888522.4556289,
+  "saved_at": 1771888802.3882382
 }

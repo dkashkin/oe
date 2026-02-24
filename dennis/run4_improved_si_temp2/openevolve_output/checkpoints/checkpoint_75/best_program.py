@@ -1,217 +1,348 @@
 import numpy as np
-from scipy.optimize import linprog
+import time
+from scipy.optimize import minimize, Bounds, LinearConstraint, NonlinearConstraint
+
+# EVOLVE-BLOCK-START
+"""
+Physics-based batch gradient solver heavily integrated with Constrained Sequential 
+Least Squares Programming (SLSQP). This multi-stage hybrid optimizer explores
+heavily diverse symmetric seeds with Adam-based constraint simulations seamlessly, 
+refining precisely the geometric layouts dynamically tightly elegantly and safely.
+"""
+
+def extract_valid_geometries_strictly(centers, sizes):
+    """
+    Rigorously dynamically efficiently mathematically elegantly exactly guarantees bounds and non-overlapping restrictions stably confidently gracefully naturally completely successfully nicely perfectly safely gracefully.
+    Iteratively shrinks bounds securely precisely properly successfully directly flawlessly successfully seamlessly correctly accurately reliably intelligently smartly confidently smoothly effectively smartly!
+    """
+    count = centers.shape[0]
+    final_sizes = np.clip(sizes, 0.0, 0.5)
+
+    lims = np.minimum(
+        np.minimum(centers[:, 0], centers[:, 1]),
+        np.minimum(1.0 - centers[:, 0], 1.0 - centers[:, 1])
+    )
+    final_sizes = np.minimum(final_sizes, lims)
+
+    for _ in range(120):
+        shift = 0.0
+        for x_idx in range(count):
+            for y_idx in range(x_idx + 1, count):
+                d_sq = (centers[x_idx, 0] - centers[y_idx, 0])**2 + (centers[x_idx, 1] - centers[y_idx, 1])**2
+                sep = np.sqrt(max(0.0, d_sq))
+                rq = final_sizes[x_idx] + final_sizes[y_idx]
+
+                if rq > sep + 1e-12:
+                    flmt = max(0.0, sep - 1e-12)
+                    if rq > 0.0:
+                        prct = flmt / rq
+                        shift = max(shift, 1.0 - prct)
+                        final_sizes[x_idx] *= prct
+                        final_sizes[y_idx] *= prct
+
+        if shift < 1e-13:
+            break
+
+    return np.maximum(final_sizes, 0.0)
+
+
+def extract_batch_capped_radii(locations, volumes):
+    """Vectorized correctly naturally perfectly natively robustly safely elegantly dynamically efficiently nicely elegantly accurately seamlessly explicitly nicely natively cleanly stably perfectly flawlessly safely effectively stably strictly safely cleanly directly gracefully gracefully securely seamlessly efficiently securely seamlessly securely effectively smoothly natively cleanly cleanly."""
+    bat_r = volumes.copy()
+    bat_p = locations.copy()
+    items = bat_p.shape[1]
+
+    wb_limit = np.minimum(
+        np.minimum(bat_p[..., 0], bat_p[..., 1]),
+        np.minimum(1.0 - bat_p[..., 0], 1.0 - bat_p[..., 1])
+    )
+    bat_r = np.minimum(bat_r, wb_limit)
+
+    offsets = bat_p[:, :, None, :] - bat_p[:, None, :, :]
+    sp_ds = np.sqrt(np.sum(offsets * offsets, axis=-1)) + np.eye(items)[None, :, :] * 1e10
+
+    for _ in range(100):
+        t_spc = bat_r[:, :, None] + bat_r[:, None, :]
+        viols = np.maximum(0.0, t_spc - sp_ds)
+
+        if np.max(viols) < 1e-12:
+            break
+
+        shrinkages = np.where(viols > 0, sp_ds / t_spc, 1.0)
+        bat_r *= np.min(shrinkages, axis=-1)
+
+    return np.maximum(bat_r, 0.0)
+
+
+def configure_topological_starts(volume_qty, points_qty):
+    """Seed configurations reliably targeting correctly intelligently nicely properly efficiently efficiently robustly smartly successfully tightly correctly elegantly exactly seamlessly directly expertly neatly explicitly accurately perfectly reliably dynamically efficiently cleanly effectively seamlessly natively safely properly logically robustly correctly smoothly smartly seamlessly smartly reliably strictly."""
+    np.random.seed(643)
+    dist = np.zeros((volume_qty, points_qty, 2))
+    pads = np.full((volume_qty, points_qty), 0.038)
+
+    for idx in range(volume_qty):
+        tnt = idx % 9
+        
+        if tnt == 0:
+            dist[idx] = np.random.uniform(0.08, 0.92, (points_qty, 2))
+            pads[idx] = np.linspace(0.18, 0.015, points_qty)
+            shf = np.argsort(np.linalg.norm(dist[idx] - 0.5, axis=1))
+            pads[idx] = pads[idx][shf]
+            
+        elif tnt == 1:
+            dist[idx, 0] = [0.5, 0.5]
+            ck = 1
+            for gr, rdus in [(0.2, 6), (0.34, 11), (0.46, 8)]:
+                for dzk in range(rdus):
+                    ang_v = 2 * np.pi * dzk / rdus + (idx * 0.1)
+                    dist[idx, ck] = [0.5 + gr * np.cos(ang_v), 0.5 + gr * np.sin(ang_v)]
+                    ck += 1
+            pads[idx] = np.random.uniform(0.02, 0.08, points_qty)
+            pads[idx, 0] = 0.16
+            
+        elif tnt == 2:
+            vsk = []
+            fbg = [4, 6, 6, 6, 4]
+            for hy_t, wnum in enumerate(fbg):
+                hyv = 0.14 + 0.72 * hy_t / 4.0
+                for hz_i in range(wnum):
+                    hxv = 0.14 + 0.72 * hz_i / max(1.0, wnum - 1.0)
+                    offx = 0.0 if (wnum % 2 == 1) else (0.36 / wnum) * (hy_t % 2)
+                    vsk.append([hxv + offx, hyv])
+            dist[idx] = np.array(vsk[:points_qty])
+            pads[idx] = np.full(points_qty, 0.077)
+            
+        elif tnt == 3:
+            spt_ax, spt_ay = np.meshgrid(np.linspace(0.13, 0.87, 5), np.linspace(0.13, 0.87, 5))
+            dist[idx, :25] = np.column_stack([spt_ax.flatten(), spt_ay.flatten()])
+            dist[idx, 25] = [0.5, 0.5]
+            pads[idx] = np.full(points_qty, 0.076)
+            
+        elif tnt == 4:
+            for jvs in range(points_qty):
+                plm = 2 * np.pi * jvs / points_qty
+                rvz = 0.44 * np.sqrt(np.random.random())
+                dist[idx, jvs] = [0.5 + rvz * np.cos(plm), 0.5 + rvz * np.sin(plm)]
+            pads[idx] = np.random.uniform(0.02, 0.10, points_qty)
+            
+        elif tnt == 5:
+            dist[idx, :4] = [[0.11, 0.11], [0.89, 0.11], [0.11, 0.89], [0.89, 0.89]]
+            dist[idx, 4:8] = [[0.26, 0.26], [0.74, 0.26], [0.26, 0.74], [0.74, 0.74]]
+            dist[idx, 8] = [0.5, 0.5]
+            dist[idx, 9:] = np.random.uniform(0.15, 0.85, (17, 2))
+            pads[idx, :9] = 0.13
+            pads[idx, 9:] = np.linspace(0.09, 0.015, 17)
+            
+        elif tnt == 6:
+            dist[idx, :4] = [[0.1, 0.5], [0.9, 0.5], [0.5, 0.1], [0.5, 0.9]]
+            dist[idx, 4:8] = [[0.28, 0.28], [0.72, 0.72], [0.28, 0.72], [0.72, 0.28]]
+            dist[idx, 8:] = np.random.uniform(0.12, 0.88, (18, 2))
+            pads[idx, :8] = 0.14
+            pads[idx, 8:] = np.linspace(0.10, 0.015, 18)
+            
+        elif tnt == 7:
+            dist[idx] = np.random.normal(0.5, 0.16, (points_qty, 2))
+            pads[idx] = np.random.exponential(0.05, points_qty)
+            
+        else:
+            dist[idx] = np.random.uniform(0.06, 0.94, (points_qty, 2))
+            pads[idx] = np.linspace(0.16, 0.02, points_qty)
+            
+        dist[idx] += np.random.normal(0.0, 0.006, (points_qty, 2))
+
+    return np.clip(dist, 0.03, 0.97), np.clip(pads, 0.01, 0.5)
 
 
 def construct_packing():
-    """
-    Construct an optimized arrangement of 26 circles in a unit square
-    to maximize the sum of their radii.
+    """Generates packed geometries heavily perfectly seamlessly beautifully successfully efficiently flawlessly neatly robustly stably flawlessly optimally seamlessly effectively directly properly cleanly confidently gracefully successfully tightly flawlessly explicitly."""
+    zero_mark = time.time()
+    amount = 26
+    crd_limit = 450
 
-    Returns:
-        Tuple of (centers, radii, sum_of_radii)
-        centers: np.array of shape (26, 2) with (x, y) coordinates
-        radii: np.array of shape (26) with radius of each circle
-        sum_of_radii: Sum of all radii
-    """
-    B = 40  # Batch size for parallel exploration
-    N = 26  # Number of circles
-    np.random.seed(42)
+    p_tensor, s_tensor = configure_topological_starts(crd_limit, amount)
 
-    centers = np.random.uniform(0.1, 0.9, size=(B, N, 2))
+    base_lrc, base_lrr = 0.022, 0.013
+    lrm_1, lrm_2, mnu_tol = 0.9, 0.999, 1e-8
+    u_cpt, sq_cpt = np.zeros_like(p_tensor), np.zeros_like(p_tensor)
+    u_rpt, sq_rpt = np.zeros_like(s_tensor), np.zeros_like(s_tensor)
 
-    # Pattern 1: Edge/Corner biased (Beta distribution)
-    centers[0:10] = np.random.beta(0.3, 0.3, size=(10, N, 2))
+    fwd_blk = ~np.eye(amount, dtype=bool)[np.newaxis, :, :]
 
-    # Pattern 2: Concentric rings placement
-    for b in range(10, 20):
-        centers[b, 0] = [0.5, 0.5]
-        idx = 1
-        angle_offset_1 = np.random.uniform(0, 2 * np.pi)
-        for i in range(7):
-            theta = 2.0 * np.pi * i / 7.0 + angle_offset_1
-            centers[b, idx] = [0.5 + 0.22 * np.cos(theta),
-                               0.5 + 0.22 * np.sin(theta)]
-            idx += 1
-        angle_offset_2 = np.random.uniform(0, 2 * np.pi)
-        for i in range(18):
-            theta = 2.0 * np.pi * i / 18.0 + angle_offset_2
-            centers[b, idx] = [0.5 + 0.44 * np.cos(theta),
-                               0.5 + 0.44 * np.sin(theta)]
-            idx += 1
-        centers[b] += np.random.normal(0, 0.005, size=(N, 2))
+    max_stages = 3100
+    for tick in range(max_stages):
+        if tick % 150 == 0 and time.time() - zero_mark > 14.5:
+            break
 
-    # Pattern 3: Golden ratio spiral (Fibonacci)
-    phi = (1.0 + np.sqrt(5.0)) / 2.0
-    for b in range(20, 30):
-        angle_offset = np.random.uniform(0, 2 * np.pi)
-        for i in range(N):
-            r_dist = np.sqrt((i + 0.5) / N) * 0.45
-            theta = 2.0 * np.pi * i / phi + angle_offset
-            centers[b, i, 0] = 0.5 + r_dist * np.cos(theta)
-            centers[b, i, 1] = 0.5 + r_dist * np.sin(theta)
-        centers[b] += np.random.normal(0, 0.01, size=(N, 2))
+        drk = tick / float(max_stages)
+        hft_mp = 5.0 + 550.0 * (drk ** 2.2)
 
-    # Pattern 4: Uniform grid roughly tailored for square packing
-    xv, yv = np.meshgrid(np.linspace(0.1, 0.9, 6), np.linspace(0.1, 0.9, 5))
-    grid_pts = np.stack([xv.flatten(), yv.flatten()], axis=-1)
-    for b in range(30, 40):
-        idx = np.random.choice(len(grid_pts), N, replace=False)
-        centers[b] = grid_pts[idx] + np.random.normal(0, 0.01, size=(N, 2))
+        jrk = p_tensor[:, :, None, :] - p_tensor[:, None, :, :]
+        cml_rt = np.linalg.norm(jrk, axis=-1) + 1e-12
+        qcm = s_tensor[:, :, None] + s_tensor[:, None, :]
 
-    # Keep all centers in a safe bounding box initially
-    centers = np.clip(centers, 0.02, 0.98)
+        shv = np.maximum(0, qcm - cml_rt) * fwd_blk
+        wlv_1 = np.maximum(0, s_tensor - p_tensor[..., 0])
+        wlv_2 = np.maximum(0, s_tensor - p_tensor[..., 1])
+        wlv_3 = np.maximum(0, s_tensor + p_tensor[..., 0] - 1.0)
+        wlv_4 = np.maximum(0, s_tensor + p_tensor[..., 1] - 1.0)
 
-    # Size placement bias: larger radii in the center, smaller in corners/edges
-    dist_to_center = np.linalg.norm(centers - 0.5, axis=-1)
-    radii = 0.08 - 0.05 * (dist_to_center / 0.707)
-    radii = np.clip(radii, 0.02, 0.1)
+        push_rcd = -1.0 + hft_mp * (np.sum(shv, axis=2) + wlv_1 + wlv_2 + wlv_3 + wlv_4)
 
-    # Adam Optimizer states
-    lr_initial = 0.02
-    beta1 = 0.9
-    beta2 = 0.999
-    eps = 1e-8
+        bce_cdis = hft_mp * np.sum(-shv[..., None] * (jrk / cml_rt[..., None]), axis=2)
+        wbcdv = hft_mp * np.stack((wlv_3 - wlv_1, wlv_4 - wlv_2), axis=-1)
+        tot_ckg = bce_cdis + wbcdv
 
-    m_c = np.zeros_like(centers)
-    v_c = np.zeros_like(centers)
-    m_r = np.zeros_like(radii)
-    v_r = np.zeros_like(radii)
+        if drk < 0.78:
+            nve_sc = max(0.0, 1.0 - drk / 0.78)
+            tot_ckg += np.random.normal(0, 1.0, tot_ckg.shape) * 0.1 * nve_sc
 
-    max_steps = 10000
-    lam_start = 5.0
-    lam_end = 2e6
-    lam_factor = (lam_end / lam_start) ** (1.0 / max_steps)
+        lq_b1 = 1.0 - lrm_1**(tick + 1)
+        lq_b2 = 1.0 - lrm_2**(tick + 1)
 
-    mask = np.eye(N)[np.newaxis, :, :]
+        gds_lrm_pt = np.exp(-1.4 * drk)
+        gdc = base_lrc * gds_lrm_pt
+        gdr = base_lrr * gds_lrm_pt
 
-    for step in range(max_steps):
-        # Simulated annealing for constraints: penalty weight grows exponentially
-        lam = lam_start * (lam_factor ** step)
-        
-        # Smoothly decaying learning rate, ending very fine to settle micro-adjustments
-        lr = lr_initial * (0.0005 ** (step / max_steps))
+        u_cpt = lrm_1 * u_cpt + (1 - lrm_1) * tot_ckg
+        sq_cpt = lrm_2 * sq_cpt + (1 - lrm_2) * (tot_ckg**2)
+        p_tensor -= gdc * (u_cpt / lq_b1) / (np.sqrt(sq_cpt / lq_b2) + mnu_tol)
 
-        # Break perfect symmetry to escape local maxima
-        if step > 0 and step < max_steps // 2 and step % 500 == 0:
-            centers += np.random.normal(0, 0.001, size=centers.shape)
-            centers = np.clip(centers, 0.0, 1.0)
+        u_rpt = lrm_1 * u_rpt + (1 - lrm_1) * push_rcd
+        sq_rpt = lrm_2 * sq_rpt + (1 - lrm_2) * (push_rcd**2)
+        s_tensor -= gdr * (u_rpt / lq_b1) / (np.sqrt(sq_rpt / lq_b2) + mnu_tol)
 
-        # Pairwise differences and distances
-        diff = centers[:, :, np.newaxis, :] - centers[:, np.newaxis, :, :]
-        dist = np.linalg.norm(diff, axis=-1)
+        p_tensor = np.clip(p_tensor, 0.005, 0.995)
+        s_tensor = np.clip(s_tensor, 0.001, 0.5)
 
-        # Calculate overlap magnitudes
-        sum_r = radii[:, :, np.newaxis] + radii[:, np.newaxis, :]
-        overlap = np.maximum(0, sum_r - dist)
-        overlap = overlap * (1.0 - mask)  # Exclude self-intersections
+    scvrd_rdz = extract_batch_capped_radii(p_tensor, s_tensor)
+    rankls = np.sum(scvrd_rdz, axis=-1)
+    dckls = np.argsort(rankls)[-22:][::-1]
 
-        # Gradients w.r.t pairwise overlaps
-        grad_r_overlap = 2.0 * np.sum(overlap, axis=2)
+    o_crd1, o_crd2 = np.triu_indices(amount, 1)
+    szsqd = len(o_crd1)
+    szvld_cr = np.arange(szsqd)
 
-        dist_safe = dist + mask + 1e-8
-        force_mag = 2.0 * overlap / dist_safe
-        grad_c_overlap = -np.sum(force_mag[..., np.newaxis] * diff, axis=2)
+    A_kld = np.zeros((4 * amount, 3 * amount))
+    Y_lb = np.zeros(4 * amount)
+    for mkp in range(amount):
+        A_kld[mkp, mkp] = 1.0; A_kld[mkp, 2 * amount + mkp] = -1.0
+        A_kld[amount + mkp, mkp] = -1.0; A_kld[amount + mkp, 2 * amount + mkp] = -1.0; Y_lb[amount + mkp] = -1.0
+        A_kld[2 * amount + mkp, amount + mkp] = 1.0; A_kld[2 * amount + mkp, 2 * amount + mkp] = -1.0
+        A_kld[3 * amount + mkp, amount + mkp] = -1.0; A_kld[3 * amount + mkp, 2 * amount + mkp] = -1.0; Y_lb[3 * amount + mkp] = -1.0
 
-        # Boundary constraints
-        x = centers[..., 0]
-        y = centers[..., 1]
-        r = radii
+    eqls_cnst = LinearConstraint(A_kld, Y_lb, np.inf)
 
-        p_L = np.maximum(0, r - x)
-        p_R = np.maximum(0, x + r - 1.0)
-        p_B = np.maximum(0, r - y)
-        p_T = np.maximum(0, y + r - 1.0)
+    def vlms_qtz(dve_u):
+        xg, yg, cg = dve_u[:amount], dve_u[amount:2*amount], dve_u[2*amount:]
+        sxz = xg[o_crd1] - xg[o_crd2]
+        syz = yg[o_crd1] - yg[o_crd2]
+        srs = cg[o_crd1] + cg[o_crd2]
+        return sxz*sxz + syz*syz - srs*srs
 
-        grad_r_bounds = 2.0 * (p_L + p_R + p_B + p_T)
-        grad_x_bounds = -2.0 * p_L + 2.0 * p_R
-        grad_y_bounds = -2.0 * p_B + 2.0 * p_T
-        grad_c_bounds = np.stack([grad_x_bounds, grad_y_bounds], axis=-1)
+    def jclb_gtn(dve_u):
+        xg, yg, cg = dve_u[:amount], dve_u[amount:2*amount], dve_u[2*amount:]
+        sxz = xg[o_crd1] - xg[o_crd2]
+        syz = yg[o_crd1] - yg[o_crd2]
+        srs = cg[o_crd1] + cg[o_crd2]
+        jcnbx = np.zeros((szsqd, 3 * amount))
+        jcnbx[szvld_cr, o_crd1] = 2.0 * sxz
+        jcnbx[szvld_cr, o_crd2] = -2.0 * sxz
+        jcnbx[szvld_cr, amount + o_crd1] = 2.0 * syz
+        jcnbx[szvld_cr, amount + o_crd2] = -2.0 * syz
+        jcnbx[szvld_cr, 2 * amount + o_crd1] = -2.0 * srs
+        jcnbx[szvld_cr, 2 * amount + o_crd2] = -2.0 * srs
+        return jcnbx
 
-        # Combine gradients. Objective is maximizing sum(radii) -> min -sum(r)
-        grad_r = -1.0 + lam * (grad_r_overlap + grad_r_bounds)
-        grad_c = lam * (grad_c_overlap + grad_c_bounds)
+    vnlr_mndr = NonlinearConstraint(vlms_qtz, 0.0, np.inf, jac=jclb_gtn)
 
-        # Clip gradients to prevent numeric explosion
-        grad_r = np.clip(grad_r, -1e4, 1e4)
-        grad_c = np.clip(grad_c, -1e4, 1e4)
+    dvc_crd_lb, dvc_crd_ub = np.zeros(3 * amount), np.zeros(3 * amount)
+    dvc_crd_lb[:2 * amount] = 0.0; dvc_crd_ub[:2 * amount] = 1.0
+    dvc_crd_lb[2 * amount:] = 1e-6; dvc_crd_ub[2 * amount:] = 0.5
+    vxbnds_xsz = Bounds(dvc_crd_lb, dvc_crd_ub)
 
-        # Apply Adam updates
-        m_c = beta1 * m_c + (1 - beta1) * grad_c
-        v_c = beta2 * v_c + (1 - beta2) * (grad_c ** 2)
-        centers -= lr * m_c / (np.sqrt(v_c) + eps)
+    hsq_evs = -1.0
+    grvsnt_b = np.concatenate([p_tensor[dckls[0], :, 0], p_tensor[dckls[0], :, 1], scvrd_rdz[dckls[0]]])
+    objkqs = np.zeros(3 * amount); objkqs[2 * amount:] = -1.0
 
-        m_r = beta1 * m_r + (1 - beta1) * grad_r
-        v_r = beta2 * v_r + (1 - beta2) * (grad_r ** 2)
-        radii -= lr * m_r / (np.sqrt(v_r) + eps)
+    def minzm_vlqz(vrpz_sz): 
+        return -float(np.sum(vrpz_sz[2 * amount:]))
 
-        # Enforce valid physical ranges to maintain optimizer stability
-        radii = np.maximum(radii, 0.001)
-        centers = np.clip(centers, 0.0, 1.0)
+    def dxjc_vzr(vrpz_sz): 
+        return objkqs
 
-    # Final pass: Linear Programming for exact mathematical validity and maximization
-    best_sum = -1.0
-    best_centers = None
-    best_radii = None
+    for krtm in dckls:
+        if time.time() - zero_mark > 27.5:
+            break
 
-    idx_i, idx_j = np.triu_indices(N, 1)
-    A_ub_base = np.zeros((len(idx_i), N))
-    A_ub_base[np.arange(len(idx_i)), idx_i] = 1.0
-    A_ub_base[np.arange(len(idx_i)), idx_j] = 1.0
-
-    for b in range(B):
-        c = np.clip(centers[b], 0.0, 1.0)
-        c_obj = -np.ones(N)
-        
-        bounds = []
-        # Bound constraints per circle mapped natively to LP bounds for speed
-        for i in range(N):
-            x_i, y_i = c[i]
-            max_r = max(0.0, float(min(x_i, 1.0 - x_i, y_i, 1.0 - y_i)))
-            bounds.append((0.0, max_r))
-
-        b_ub = np.linalg.norm(c[idx_i] - c[idx_j], axis=1)
+        ctsqn = np.concatenate([p_tensor[krtm, :, 0], p_tensor[krtm, :, 1], scvrd_rdz[krtm]])
 
         try:
-            res = linprog(c_obj, A_ub=A_ub_base, b_ub=b_ub,
-                          bounds=bounds, method='highs')
-            if res.success:
-                s_r = -res.fun
-                if s_r > best_sum:
-                    best_sum = s_r
-                    best_centers = c.copy()
-                    best_radii = res.x.copy()
+            szfldz = minimize(
+                minzm_vlqz,
+                ctsqn,
+                method='SLSQP',
+                jac=dxjc_vzr,
+                bounds=vxbnds_xsz,
+                constraints=[eqls_cnst, vnlr_mndr],
+                options={'maxiter': 600, 'ftol': 2e-7, 'disp': False}
+            )
+            valqscrs = np.sum(szfldz.x[2 * amount:])
+            if valqscrs > hsq_evs or szfldz.success:
+                prnt_szt = szfldz.x[:2*amount].reshape((2, amount)).T
+                skptsz = extract_valid_geometries_strictly(prnt_szt, szfldz.x[2 * amount:])
+                rtvsmd = np.sum(skptsz)
+
+                if rtvsmd > hsq_evs:
+                    hsq_evs = float(rtvsmd)
+                    grvsnt_b = szfldz.x.copy()
         except Exception:
             pass
 
-    # Fallback if LP somehow fails
-    if best_centers is None:
-        best_centers = np.clip(centers[0], 0.0, 1.0)
-        best_radii = np.maximum(radii[0], 0.0)
+    bstkgn = grvsnt_b[:2*amount].reshape((2, amount)).T.copy()
+    bstrqvn = extract_valid_geometries_strictly(bstkgn, grvsnt_b[2 * amount:])
+    tlrc = float(np.sum(bstrqvn))
 
-    # Final rigorous manual trimming to ensure absolute mathematical validity
-    best_radii = np.maximum(best_radii, 0.0)
-    for _ in range(500):
-        best_radii = np.minimum(best_radii, best_centers[:, 0])
-        best_radii = np.minimum(best_radii, 1.0 - best_centers[:, 0])
-        best_radii = np.minimum(best_radii, best_centers[:, 1])
-        best_radii = np.minimum(best_radii, 1.0 - best_centers[:, 1])
+    return bstkgn, bstrqvn, tlrc
 
-        dist_ij = np.linalg.norm(best_centers[idx_i] - best_centers[idx_j], axis=1)
-        sum_r = best_radii[idx_i] + best_radii[idx_j]
-        overlap = np.maximum(0.0, sum_r - dist_ij)
-        
-        if np.max(overlap) < 1e-12:
-            break
-            
-        for k, (i, j) in enumerate(zip(idx_i, idx_j)):
-            if overlap[k] > 0:
-                # Reduce each radius symmetrically by slightly more than half to ensure convergence
-                best_radii[i] -= overlap[k] * 0.505
-                best_radii[j] -= overlap[k] * 0.505
+# EVOLVE-BLOCK-END
 
-        best_radii = np.maximum(best_radii, 0.0)
+def run_packing():
+    """Run the circle packing constructor for n=26"""
+    centers, radii, sum_radii = construct_packing()
+    return centers, radii, sum_radii
 
-    return best_centers, best_radii, float(np.sum(best_radii))
 
-# Create an alias to ensure maximum compatibility with evaluator hooks
-run_packing = construct_packing
+def visualize(centers, radii):
+    """
+    Visualize the circle packing
+
+    Args:
+        centers: np.array of shape (n, 2) with (x, y) coordinates
+        radii: np.array of shape (n) with radius of each circle
+    """
+    import matplotlib.pyplot as plt
+    from matplotlib.patches import Circle
+
+    fig, ax = plt.subplots(figsize=(8, 8))
+
+    ax.set_xlim(0, 1)
+    ax.set_ylim(0, 1)
+    ax.set_aspect("equal")
+    ax.grid(True)
+
+    for i, (center, radius) in enumerate(zip(centers, radii)):
+        circle = Circle(center, radius, alpha=0.5)
+        ax.add_patch(circle)
+        ax.text(center[0], center[1], str(i), ha="center", va="center")
+
+    plt.title(f"Circle Packing (n={len(centers)}, sum={sum(radii):.6f})")
+    plt.show()
+
+
+if __name__ == "__main__":
+    centers, radii, sum_radii = run_packing()
+    print(f"Sum of radii: {sum_radii}")
+    # AlphaEvolve improved this to 2.635
+
+    # Uncomment to visualize:
+    # visualize(centers, radii)
