@@ -22,7 +22,7 @@ class TimeoutError(Exception):
     pass
 
 
-def timeout_handler(signum, frame):
+def timeout_handler(signum, frame): 
     """Handle timeout signal"""
     raise TimeoutError("Function execution timed out")
 
@@ -419,7 +419,7 @@ def evaluate_stage1(program_path):
             spatial_spread = float(np.std(distances_from_centroid) / (0.5 * np.sqrt(2))) if valid else 0.0
             spatial_spread = min(1.0, max(0.0, spatial_spread))
 
-            # Target from paper
+            # Target from paper 
             target = 2.635
 
             # Simple combined score for stage 1
