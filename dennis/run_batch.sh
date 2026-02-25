@@ -1,0 +1,9 @@
+dennis/run_short_1/run.sh
+dennis/run_short_2/run.sh
+dennis/run_short_3/run.sh
+dennis/run_short_4/run.sh
+dennis/run_short_5/run.sh
+dennis/run_short_6/run.sh
+dennis/run_short_7/run.sh
+dennis/run_short_8/run.sh
+dennis/run_short_9/run.sh
