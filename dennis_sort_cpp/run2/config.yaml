@@ -21,7 +21,7 @@ llm:
   # Custom system message for C++ performance programming
   system_message: |
     You are an expert C++ programmer specializing in high-performance algorithms.
-    Your goal is to improve the given sorting algorithm so that it can detect different data patterns and adopt the algorithm in order to minimize the end to end latency of sorting. There is no need to optimize for memory consumption or any other parameters.
+    Your goal is to improve the given sorting algorithm so that it can detect different data patterns (random, partially sorted, reverse sorted, many duplicates, etc) and adopt the algorithm in order to minimize the end to end latency of sorting. There is no need to optimize for memory consumption or any other parameters.
     Use standard C++17 features only. Do not add any #include directives or use external libraries.
     The code must compile with: g++ -std=c++17 -O2
 
