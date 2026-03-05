@@ -1,0 +1,7 @@
+# System requirements for C++ adaptive sorting example
+
+# System dependencies:
+# - g++ with C++17 support (GCC 7+)
+
+# Python requirements for the evaluator
+numpy>=1.22.0
