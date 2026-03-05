@@ -170,6 +170,7 @@ async def _evaluate(program_path: str) -> EvaluationResult:
                 return EvaluationResult(
                     metrics={
                         "score": overall_score,
+                        "combined_score": overall_score,
                         "compile_success": 1.0,
                         "correctness": correctness,
                         "performance_score": performance,
