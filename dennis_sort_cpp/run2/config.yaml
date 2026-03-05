@@ -1,10 +1,10 @@
-# Configuration for Rust Adaptive Sorting Evolution
+# Configuration for C++ Adaptive Sorting Evolution
 
 # General settings
 max_iterations: 150
-checkpoint_interval: 15
+checkpoint_interval: 5
 log_level: "INFO"
-file_suffix: ".rs"
+file_suffix: ".cpp"
 
 # LLM configuration
 llm:
@@ -17,18 +17,19 @@ llm:
   temperature: 1.0
   max_tokens: 30000
   timeout: 600
-  
-  # Custom system message for Rust performance programming
+
+  # Custom system message for C++ performance programming
   system_message: |
-    You are an expert Rust programmer specializing in high-performance algorithms.
+    You are an expert C++ programmer specializing in high-performance algorithms.
     Your goal is to improve the given sorting algorithm so that it can detect different data patterns and adopt the algorithm in order to minimize the end to end latency of sorting. There is no need to optimize for memory consumption or any other parameters.
-    Ensure memory safety and idiomatic Rust code. Use appropriate data structures and leverage Rust's zero-cost abstractions.
+    Use standard C++17 features only. Do not add any #include directives or use external libraries.
+    The code must compile with: g++ -std=c++17 -O2
 
 # Prompt configuration
 prompt:
   num_top_programs: 4
   num_diverse_programs: 3
-  
+
   # Include compilation errors and performance artifacts
   include_artifacts: true
   max_artifact_bytes: 8192
@@ -37,7 +38,7 @@ prompt:
 database:
   population_size: 150
   num_islands: 4
-  
+
   # Feature dimensions for sorting algorithms
   feature_dimensions:
     - "score"            # Overall performance score
@@ -47,8 +48,8 @@ database:
 
 # Evaluator configuration
 evaluator:
-  timeout: 600  # Rust compilation can take time
+  timeout: 600
   parallel_evaluations: 3
-  
+
   # Direct evaluation - evaluator doesn't implement cascade functions
   cascade_evaluation: false
