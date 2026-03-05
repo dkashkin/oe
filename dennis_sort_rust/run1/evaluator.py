@@ -83,6 +83,13 @@ async def _evaluate(program_path: str) -> EvaluationResult:
                 f.write(cargo_toml_content)
 
             cargo_lock_source = project_source_dir / "Cargo.lock"
+            if not cargo_lock_source.exists():
+                subprocess.run(
+                    ["cargo", "generate-lockfile"],
+                    cwd=str(project_source_dir),
+                    capture_output=True,
+                    text=True,
+                )
             with open(cargo_lock_source, "r") as f:
                 cargo_lock_content = f.read()
             cargo_lock_path = project_dir / "Cargo.lock"
