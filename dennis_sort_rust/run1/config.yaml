@@ -8,9 +8,9 @@ file_suffix: ".rs"
 
 # LLM configuration
 llm:
-  primary_model: "gemini-3-flash-preview"
+  primary_model: "gemini-3-pro-preview"
   primary_model_weight: 0.9
-  secondary_model: "gemini-3-flash-preview"
+  secondary_model: "gemini-3-pro-preview"
   secondary_model_weight: 0.1
   api_base: "https://generativelanguage.googleapis.com/v1beta/openai/"
   api_key: ${GEMINI_API_KEY}
