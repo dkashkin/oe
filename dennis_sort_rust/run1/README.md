@@ -30,8 +30,7 @@ pip install -r requirements.txt
 Run the evolution process:
 
 ```bash
-cd examples/rust_adaptive_sort
-python ../../openevolve-run.py initial_program.rs evaluator.py --config config.yaml --iterations 150
+python ../../openevolve-run.py initial_program.rs evaluator.py --config config.yaml --iterations 10
 ```
 
 This example shows how OpenEvolve can evolve algorithms in Rust by starting with a basic quicksort implementation and improving it to adaptively handle different data patterns and optimize performance across various sorting scenarios.
