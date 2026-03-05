@@ -65,9 +65,9 @@ BenchmarkResults run_benchmark(const std::vector<std::vector<int>>& test_data) {
 
 std::vector<int> generate_random_data(size_t size) {
     std::mt19937 rng(std::random_device{}());
-    std::uniform_int_distribution<int> dist(-10000, 10000);
+    std::uniform_int_distribution<int32_t> dist(INT32_MIN, INT32_MAX);
     std::vector<int> data(size);
-    for (auto& v : data) v = dist(rng);
+    for (auto& v : data) v = dist(rng) % 10000;
     return data;
 }
 
@@ -92,9 +92,9 @@ std::vector<int> generate_reverse_sorted_data(size_t size) {
 
 std::vector<int> generate_data_with_duplicates(size_t size, int unique_values) {
     std::mt19937 rng(std::random_device{}());
-    std::uniform_int_distribution<int> dist(0, unique_values - 1);
+    std::uniform_int_distribution<int32_t> dist(INT32_MIN, INT32_MAX);
     std::vector<int> data(size);
-    for (auto& v : data) v = dist(rng);
+    for (auto& v : data) v = dist(rng) % unique_values;
     return data;
 }
 
@@ -106,8 +106,8 @@ std::vector<int> generate_partially_sorted_data(size_t size, double sorted_fract
 
     for (size_t i = 0; i < sorted_size; ++i) data.push_back(static_cast<int>(i));
 
-    std::uniform_int_distribution<int> dist(-10000, 10000);
-    for (size_t i = sorted_size; i < size; ++i) data.push_back(dist(rng));
+    std::uniform_int_distribution<int32_t> dist(INT32_MIN, INT32_MAX);
+    for (size_t i = sorted_size; i < size; ++i) data.push_back(dist(rng) % 10000);
 
     return data;
 }
