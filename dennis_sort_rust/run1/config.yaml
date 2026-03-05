@@ -16,6 +16,7 @@ llm:
   api_key: ${GEMINI_API_KEY}
   temperature: 1.0
   max_tokens: 30000
+  timeout: 600
   
   # Custom system message for Rust performance programming
   system_message: |
@@ -47,7 +48,7 @@ database:
 
 # Evaluator configuration
 evaluator:
-  timeout: 60  # Rust compilation can take time
+  timeout: 600  # Rust compilation can take time
   parallel_evaluations: 3
   
   # Direct evaluation - evaluator doesn't implement cascade functions
