@@ -1,7 +1,5 @@
 // Adaptive Sorting Algorithm Implementation
 // This program implements a sorting algorithm that can be evolved to adapt to different data patterns
-
-// EVOLVE-BLOCK-START
 // Initial implementation: Simple quicksort
 // This can be evolved to:
 // - Hybrid algorithms (introsort, timsort-like)
@@ -38,35 +36,3 @@ int partition(std::vector<int>& arr, int low, int high) {
     std::swap(arr[i], arr[high]);
     return i;
 }
-
-// Helper function to detect if array is nearly sorted
-bool is_nearly_sorted(const std::vector<int>& arr, double threshold) {
-    if (arr.size() <= 1) {
-        return true;
-    }
-    int inversions = 0;
-    double max_inversions = (static_cast<double>(arr.size()) * (arr.size() - 1) / 2.0) * threshold;
-    for (size_t i = 0; i < arr.size() - 1; ++i) {
-        for (size_t j = i + 1; j < arr.size(); ++j) {
-            if (arr[i] > arr[j]) {
-                ++inversions;
-                if (static_cast<double>(inversions) > max_inversions) {
-                    return false;
-                }
-            }
-        }
-    }
-    return true;
-}
-
-// Helper function for insertion sort (useful for small arrays)
-void insertion_sort(std::vector<int>& arr) {
-    for (size_t i = 1; i < arr.size(); ++i) {
-        int j = static_cast<int>(i);
-        while (j > 0 && arr[j - 1] > arr[j]) {
-            std::swap(arr[j], arr[j - 1]);
-            --j;
-        }
-    }
-}
-// EVOLVE-BLOCK-END
