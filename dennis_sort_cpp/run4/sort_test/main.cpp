@@ -112,6 +112,75 @@ std::vector<int> generate_partially_sorted_data(size_t size, double sorted_fract
     return data;
 }
 
+std::vector<int> generate_organ_pipe_data(size_t size) {
+    std::vector<int> data(size);
+    size_t mid = size / 2;
+    for (size_t i = 0; i < mid; ++i) data[i] = static_cast<int>(i);
+    for (size_t i = mid; i < size; ++i) data[i] = static_cast<int>(size - i - 1);
+    return data;
+}
+
+std::vector<int> generate_interleaved_sorted_data(size_t size, int k) {
+    std::vector<int> data;
+    data.reserve(size);
+    size_t chunk = size / k;
+    std::vector<std::vector<int>> runs(k);
+    for (int i = 0; i < k; ++i) {
+        for (size_t j = 0; j < chunk; ++j) {
+            runs[i].push_back(static_cast<int>(j * k + i));
+        }
+    }
+    for (size_t j = 0; j < chunk; ++j) {
+        for (int i = 0; i < k; ++i) data.push_back(runs[i][j]);
+    }
+    return data;
+}
+
+std::vector<int> generate_shuffled_blocks_data(size_t size, size_t block_size) {
+    std::vector<int> data(size);
+    for (size_t i = 0; i < size; ++i) data[i] = static_cast<int>(i);
+
+    size_t num_blocks = size / block_size;
+    std::vector<size_t> block_indices(num_blocks);
+    for (size_t i = 0; i < num_blocks; ++i) block_indices[i] = i;
+
+    std::mt19937 rng(std::random_device{}());
+    std::shuffle(block_indices.begin(), block_indices.end(), rng);
+
+    std::vector<int> result;
+    result.reserve(size);
+    for (size_t bi : block_indices) {
+        for (size_t j = 0; j < block_size; ++j)
+            result.push_back(data[bi * block_size + j]);
+    }
+    return result;
+}
+
+std::vector<int> generate_skewed_data(size_t size, double exponent) {
+    std::mt19937 rng(std::random_device{}());
+    std::uniform_real_distribution<double> dist(0.0, 1.0);
+    std::vector<int> data(size);
+    for (auto& v : data) {
+        double u = dist(rng);
+        v = static_cast<int>(std::pow(u, exponent) * 1000000);
+    }
+    return data;
+}
+
+std::vector<int> generate_sawtooth_data(size_t size, size_t tooth_size) {
+    std::mt19937 rng(std::random_device{}());
+    std::uniform_int_distribution<int> offset_dist(0, 100000);
+    std::vector<int> data;
+    data.reserve(size);
+    for (size_t i = 0; i < size; ) {
+        int base = offset_dist(rng);
+        for (size_t j = 0; j < tooth_size && i < size; ++j, ++i) {
+            data.push_back(base + static_cast<int>(j));
+        }
+    }
+    return data;
+}
+
 int main() {
     std::vector<std::vector<int>> test_data = {
         generate_random_data(20000),
@@ -124,6 +193,16 @@ int main() {
         generate_data_with_duplicates(200000, 100),
         generate_partially_sorted_data(20000, 0.3),
         generate_partially_sorted_data(200000, 0.3),
+        generate_organ_pipe_data(20000),
+        generate_organ_pipe_data(200000),
+        generate_interleaved_sorted_data(20000, 8),
+        generate_interleaved_sorted_data(200000, 8),
+        generate_shuffled_blocks_data(20000, 1000),
+        generate_shuffled_blocks_data(200000, 1000),
+        generate_skewed_data(20000, 3.0),
+        generate_skewed_data(200000, 3.0),
+        generate_sawtooth_data(20000, 50),
+        generate_sawtooth_data(200000, 50),
     };
 
     BenchmarkResults results = run_benchmark(test_data);
