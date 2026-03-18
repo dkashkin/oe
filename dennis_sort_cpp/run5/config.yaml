@@ -1,0 +1,55 @@
+# Configuration for C++ Adaptive Sorting Evolution
+
+# General settings
+max_iterations: 1000
+checkpoint_interval: 5
+log_level: "INFO"
+file_suffix: ".cpp"
+
+# LLM configuration
+llm:
+  primary_model: "gemini-3-flash-preview"
+  primary_model_weight: 0.9
+  secondary_model: "gemini-3-pro-preview"
+  secondary_model_weight: 0.1
+  api_base: "https://generativelanguage.googleapis.com/v1beta/openai/"
+  api_key: ${GEMINI_API_KEY}
+  temperature: 1.0
+  max_tokens: 30000
+  timeout: 600
+
+  # Custom system message for C++ performance programming
+  system_message: |
+    You are an expert C++ programmer specializing in high-performance algorithms.
+    Your goal is to improve the given sorting algorithm so that it can detect different data patterns (for example random, partially sorted, reverse sorted, many duplicates, etc) and adopt the algorithm in order to minimize the end to end latency of sorting. There is no need to optimize for memory consumption or any other parameters.
+    Use standard C++17 features only. Do not add any #include directives or use external libraries.
+    The code must compile with: g++ -std=c++17 -O2
+
+# Prompt configuration
+prompt:
+  num_top_programs: 4
+  num_diverse_programs: 3
+
+  # Include compilation errors and performance artifacts
+  include_artifacts: true
+  max_artifact_bytes: 8192
+
+# Database configuration
+database:
+  population_size: 150
+  num_islands: 4
+
+  # Feature dimensions for sorting algorithms
+  feature_dimensions:
+    - "score"            # Overall performance score
+    - "performance_score"  # Speed performance
+    - "adaptability_score" # Adaptability to different data patterns
+  feature_bins: 8
+
+# Evaluator configuration
+evaluator:
+  timeout: 600
+  parallel_evaluations: 3
+
+  # Direct evaluation - evaluator doesn't implement cascade functions
+  cascade_evaluation: false
